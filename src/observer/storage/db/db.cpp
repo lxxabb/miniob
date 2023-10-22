@@ -101,6 +101,36 @@ RC Db::create_table(const char *table_name, int attribute_count, const AttrInfoS
   return RC::SUCCESS;
 }
 
+RC Db::drop_table(const char *table_name)
+{
+  RC rc = RC::SUCCESS;
+  // check table_name
+  if (opened_tables_.count(table_name) == 0) {
+    LOG_WARN("%s not found in opened_tables_.", table_name);
+    return RC::SCHEMA_TABLE_NOT_EXIST;
+  }
+  Table* table=opened_tables_[table_name];
+  rc = table->drop(path_.c_str());
+  if(rc != RC::SUCCESS) return rc;
+  opened_tables_.erase(table_name);
+  delete table;
+  LOG_INFO("drop table success. table name=%s", table_name);
+  // 文件路径可以移到Table模块
+  // std::string table_file_path = table_meta_file(path_.c_str(), table_name);
+  // Table *table = new Table();
+  // int32_t table_id = next_table_id_++;
+  // rc = table->create(table_id, table_file_path.c_str(), table_name, path_.c_str(), attribute_count, attributes);
+  // if (rc != RC::SUCCESS) {
+  //   LOG_ERROR("Failed to create table %s.", table_name);
+  //   delete table;
+  //   return rc;
+  // }
+
+  // opened_tables_[table_name] = table;
+  // LOG_INFO("Create table success. table name=%s, table_id:%d", table_name, table_id);
+  return RC::SUCCESS;
+}
+
 Table *Db::find_table(const char *table_name) const
 {
   std::unordered_map<std::string, Table *>::const_iterator iter = opened_tables_.find(table_name);

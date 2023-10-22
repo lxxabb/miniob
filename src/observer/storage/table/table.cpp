@@ -126,6 +126,45 @@ RC Table::create(int32_t table_id,
   return rc;
 }
 
+RC Table::drop( const char *path)
+{ 
+  int fd = ::open(path, O_RDONLY | O_CLOEXEC, 0600);
+  if (fd < 0) {
+    LOG_ERROR("drop table file failed - not exists. filename=%s, errmsg=%d:%s", path, errno, strerror(errno));
+    return RC::IOERR_OPEN;
+  }
+  close(fd);
+  RC rc = sync();//刷新所有脏页
+  if(rc != RC::SUCCESS) return rc;
+  std::string path_ = table_meta_file(path, name());
+  if(unlink(path_.c_str()) != 0) {
+        LOG_ERROR("Failed to remove meta file=%s, errno=%d", path_.c_str(), errno);
+        return RC::FILE_NOT_EXIST;
+    }
+  std::string data_file = std::string(path) + "/" + name() + TABLE_DATA_SUFFIX;
+  if(unlink(data_file.c_str()) != 0) { // 删除描述表元数据的文件
+      LOG_ERROR("Failed to remove data file=%s, errno=%d", data_file.c_str(), errno);
+      return RC::FILE_NOT_EXIST;
+  }
+  //  std::string text_data_file = std::string(path) + "/" + name() + TABLE_TEXT_DATA_SUFFIX;
+  //  if(unlink(text_data_file.c_str()) != 0) { // 删除表实现text字段的数据文件（后续实现了text case时需要考虑，最开始可以不考虑这个逻辑）
+  //       LOG_ERROR("Failed to remove text data file=%s, errno=%d", text_data_file.c_str(), errno);
+  //       return RC::GENERIC_ERROR;
+  //   }
+    const int index_num = table_meta_.index_num();
+    for (int i = 0; i < index_num; i++) {  // 清理所有的索引相关文件数据与索引元数据
+        ((BplusTreeIndex*)indexes_[i])->close();
+        const IndexMeta* index_meta = table_meta_.index(i);
+        std::string index_file = index_data_file(path, name(), index_meta->name());
+        if(unlink(index_file.c_str()) != 0) {
+            LOG_ERROR("Failed to remove index file=%s, errno=%d", index_file.c_str(), errno);
+            return RC::FILE_NOT_EXIST;
+        }
+    }
+    return RC::SUCCESS;
+
+}
+
 RC Table::open(const char *meta_file, const char *base_dir)
 {
   // 加载元数据文件
@@ -492,6 +531,14 @@ Index *Table::find_index_by_field(const char *field_name) const
   }
   return nullptr;
 }
+
+std::string Table::index_data_file(const char* path, const char* table_name, const char* index_name)
+  {
+    std::string ret;
+    ret+=path;ret+='/';ret+=table_name;ret+='-';ret+=index_name;
+    ret+=".index";
+    return ret;
+  }
 
 RC Table::sync()
 {

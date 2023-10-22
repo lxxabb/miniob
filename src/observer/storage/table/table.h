@@ -54,6 +54,12 @@ public:
             int attribute_count, 
             const AttrInfoSqlNode attributes[]);
 
+ /**
+   * drop一个表  edit by liuyizhe  tmp
+   * @param path 元数据保存的文件(完整路径)
+   */
+  RC drop( const char *path);
+
   /**
    * 打开一个表
    * @param meta_file 保存表元数据的文件完整路径
@@ -110,6 +116,7 @@ private:
 public:
   Index *find_index(const char *index_name) const;
   Index *find_index_by_field(const char *field_name) const;
+  std::string index_data_file(const char* path, const char* table_name, const char* index_name);
 
 private:
   std::string base_dir_;
