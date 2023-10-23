@@ -1,9 +1,11 @@
+#pragma once
 #include<stdint.h>
 #include<stdio.h>
 #include<string>
 #include<sstream>
+#include<error.h>
 #include "rc.h"
-#include "sql/parser/parse_defs.h"
+//#include "sql/parser/parse_defs.h"
 
 inline bool is_leap_year(int year)
 {
@@ -29,7 +31,12 @@ inline RC string_to_date(const char*str,int32_t &date)
 }
 inline std::string date_to_string(int32_t date)
 {
+    if(!date/100000000){
+        perror("invaild date");
+    }
     std::stringstream ss;
     ss<<date;
-    return ss.str();
+    std::string ret=ss.str();
+    ret.insert(4,"-");ret.insert(7,"-");
+    return ret;
 }

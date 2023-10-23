@@ -15,6 +15,7 @@ See the Mulan PSL v2 for more details. */
 #pragma once
 
 #include <string>
+#include "common/date.h"
 
 /**
  * @brief 属性的类型
@@ -29,6 +30,8 @@ enum AttrType
   BOOLEANS,       ///< boolean类型，当前不是由parser解析出来的，是程序内部使用的
   DATES,
 };
+
+
 
 const char *attr_type_to_string(AttrType type);
 AttrType attr_type_from_string(const char *s);
@@ -68,7 +71,10 @@ public:
   void set_float(float val);
   void set_boolean(bool val);
   void set_string(const char *s, int len = 0);
+  void set_date(int val); //new
   void set_value(const Value &value);
+ 
+
 
   std::string to_string() const;
 

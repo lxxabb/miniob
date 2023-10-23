@@ -76,6 +76,10 @@ void Value::set_data(char *data, int length)
       num_value_.bool_value_ = *(int *)data != 0;
       length_ = length;
     } break;
+    case DATES: {
+      num_value_.int_value_=*(int *)data;
+      length_=length;
+    }
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
     } break;
@@ -112,6 +116,13 @@ void Value::set_string(const char *s, int len /*= 0*/)
   length_ = str_value_.length();
 }
 
+void Value::set_date(int val) //new
+{
+  attr_type_ = DATES;
+  num_value_.int_value_ = val;
+  length_ = sizeof(val);
+}
+
 void Value::set_value(const Value &value)
 {
   switch (value.attr_type_) {
@@ -126,6 +137,9 @@ void Value::set_value(const Value &value)
     } break;
     case BOOLEANS: {
       set_boolean(value.get_boolean());
+    } break;
+    case DATES: {
+      set_date(value.get_int());
     } break;
     case UNDEFINED: {
       ASSERT(false, "got an invalid value type");
@@ -172,6 +186,7 @@ int Value::compare(const Value &other) const
 {
   if (this->attr_type_ == other.attr_type_) {
     switch (this->attr_type_) {
+      case DATES:
       case INTS: {
         return common::compare_int((void *)&this->num_value_.int_value_, (void *)&other.num_value_.int_value_);
       } break;
@@ -197,6 +212,22 @@ int Value::compare(const Value &other) const
   } else if (this->attr_type_ == FLOATS && other.attr_type_ == INTS) {
     float other_data = other.num_value_.int_value_;
     return common::compare_float((void *)&this->num_value_.float_value_, (void *)&other_data);
+   } else if(this->attr_type_==DATES && other.attr_type_==CHARS) {
+    int other_data;
+    RC rc=string_to_date(other.get_string().c_str(),other_data);
+    if(rc!=RC::SUCCESS) {
+      LOG_WARN("INVAILD DATES ARG");
+      return -1;
+    }
+    return common::compare_int((void*)&this->num_value_,(void*)&other_data);
+  } else if(this->attr_type_==CHARS && other.attr_type_==DATES) {
+    int this_data;
+    RC rc=string_to_date(this->get_string().c_str(),this_data);
+    if(rc!=RC::SUCCESS) {
+      LOG_WARN("INVAILD DATES ARG");
+      return -1;
+    }
+    return common::compare_int((void*)&this_data,(void*)&other.num_value_.int_value_);
   }
   LOG_WARN("not supported");
   return -1;  // TODO return rc?
