@@ -122,6 +122,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %token <number> NUMBER
 %token <floats> FLOAT
 %token <string> ID
+%token <string> DATE_STR
 %token <string> SSS
 //非终结符
 
@@ -385,6 +386,11 @@ value:
     |SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);
       $$ = new Value(tmp);
+      free(tmp);
+    }
+    |DATE_STR {
+      char *tmp = common::substr($1,1,strlen($1)-2);
+      $$ = new Value(tmp,-1);
       free(tmp);
     }
     ;

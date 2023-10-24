@@ -55,6 +55,13 @@ Value::Value(bool val)
 
 Value::Value(const char *s, int len /*= 0*/)
 {
+  if(len==-1)
+  {
+    int tmp=0;
+    string_to_date(s,tmp);
+    set_date(tmp);
+  }
+  else
   set_string(s, len);
 }
 
