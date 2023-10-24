@@ -182,6 +182,9 @@ std::string Value::to_string() const
     case CHARS: {
       os << str_value_;
     } break;
+     case DATES: {
+      os << date_to_string(num_value_.int_value_);
+    } break;
     default: {
       LOG_WARN("unsupported attr type: %d", attr_type_);
     } break;
