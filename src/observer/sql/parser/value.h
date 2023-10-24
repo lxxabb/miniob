@@ -91,6 +91,13 @@ public:
     return attr_type_;
   }
 
+//edit by liu
+  bool value_is_vaild() const {
+    if(attr_type_==DATES && num_value_.int_value_==-1) {
+      return false;
+    } return true;
+  }
+
 public:
   /**
    * 获取对应的值
