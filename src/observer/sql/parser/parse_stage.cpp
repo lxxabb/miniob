@@ -27,6 +27,20 @@ See the Mulan PSL v2 for more details. */
 
 using namespace common;
 
+inline RC check_insert_data(ParsedSqlResult& parsed_sql_result)
+{
+    if(parsed_sql_result.sql_nodes()[0].get()->flag==SCF_INSERT)
+    {
+        std::vector<Value>& arr = parsed_sql_result.sql_nodes()[0].get()->insertion.values;
+        for(int i=0;i<arr.size();i++)
+        {
+          if(arr[i].attr_type()==DATES&&arr[i].get_int()==-1)
+            return RC::INVALID_ARGUMENT;
+        }
+    }
+    return RC::SUCCESS;
+}
+
 RC ParseStage::handle_request(SQLStageEvent *sql_event)
 {
   RC rc = RC::SUCCESS;
@@ -37,6 +51,14 @@ RC ParseStage::handle_request(SQLStageEvent *sql_event)
   ParsedSqlResult parsed_sql_result;
 
   parse(sql.c_str(), &parsed_sql_result);
+  //检查date是否合法
+  rc=check_insert_data(parsed_sql_result);
+  if(rc!=RC::SUCCESS) {
+    sql_result->set_return_code(rc);
+   // sql_result->set_state_string("FAILURE");
+    return rc;
+  }
+
   if (parsed_sql_result.sql_nodes().empty()) {
     sql_result->set_return_code(RC::SUCCESS);
     sql_result->set_state_string("");

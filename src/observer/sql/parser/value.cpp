@@ -58,8 +58,11 @@ Value::Value(const char *s, int len /*= 0*/)
   if(len==-1)
   {
     int tmp=0;
-    string_to_date(s,tmp);
-    set_date(tmp);
+    RC rc = string_to_date(s,tmp);
+    if(rc!=RC::SUCCESS)
+      set_date(-1);
+    else
+      set_date(tmp);
   }
   else
   set_string(s, len);
@@ -254,7 +257,8 @@ int Value::get_int() const
         return 0;
       }
     }
-    case INTS: {
+    case INTS:
+    case DATES: {
       return num_value_.int_value_;
     }
     case FLOATS: {
