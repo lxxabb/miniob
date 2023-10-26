@@ -210,6 +210,7 @@ RC LogicalPlanGenerator::create_plan(
 {
   Table *table = update_stmt->table();
   Value *value = update_stmt->values();
+  const char* attr_name=update_stmt->attr_name();
   FilterStmt *filter_stmt = update_stmt->filter_stmt();
   std::vector<Field> fields;
   for (int i = table->table_meta().sys_field_num(); i < table->table_meta().field_num(); i++) {
@@ -224,7 +225,7 @@ RC LogicalPlanGenerator::create_plan(
     return rc;
   }
 
-  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table,value));
+  unique_ptr<LogicalOperator> update_oper(new UpdateLogicalOperator(table,value,attr_name));
 
   if (predicate_oper) {
     predicate_oper->add_child(std::move(table_get_oper));

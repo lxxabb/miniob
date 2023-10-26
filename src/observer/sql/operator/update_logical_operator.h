@@ -23,7 +23,7 @@ See the Mulan PSL v2 for more details. */
 class UpdateLogicalOperator : public LogicalOperator 
 {
 public:
-  UpdateLogicalOperator(Table *table,Value* value);
+  UpdateLogicalOperator(Table *table,Value* value,const char* attr_name);
   virtual ~UpdateLogicalOperator() = default;
 
   LogicalOperatorType type() const override
@@ -38,8 +38,13 @@ public:
   {
     return value_;
   }
+  const char* attr_name() const
+  {
+    return attr_name_;
+  }
 
 private:
   Table *table_ = nullptr;
   Value *value_ = nullptr;
+  const char* attr_name_ ;
 };

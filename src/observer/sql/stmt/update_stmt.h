@@ -41,6 +41,10 @@ public:
   {
     return values_;
   }
+  const char* attr_name() const
+  {
+    return attr_name_;
+  }
   int value_amount() const
   {
     return value_amount_;
