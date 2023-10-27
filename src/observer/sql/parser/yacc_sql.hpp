@@ -86,25 +86,26 @@ extern int yydebug;
     FROM = 287,                    /* FROM  */
     WHERE = 288,                   /* WHERE  */
     LIKE_OP = 289,                 /* LIKE_OP  */
-    AND = 290,                     /* AND  */
-    SET = 291,                     /* SET  */
-    ON = 292,                      /* ON  */
-    LOAD = 293,                    /* LOAD  */
-    DATA = 294,                    /* DATA  */
-    INFILE = 295,                  /* INFILE  */
-    EXPLAIN = 296,                 /* EXPLAIN  */
-    EQ = 297,                      /* EQ  */
-    LT = 298,                      /* LT  */
-    GT = 299,                      /* GT  */
-    LE = 300,                      /* LE  */
-    GE = 301,                      /* GE  */
-    NE = 302,                      /* NE  */
-    NUMBER = 303,                  /* NUMBER  */
-    FLOAT = 304,                   /* FLOAT  */
-    ID = 305,                      /* ID  */
-    DATE_STR = 306,                /* DATE_STR  */
-    SSS = 307,                     /* SSS  */
-    UMINUS = 308                   /* UMINUS  */
+    NOT_LIKE_OP = 290,             /* NOT_LIKE_OP  */
+    AND = 291,                     /* AND  */
+    SET = 292,                     /* SET  */
+    ON = 293,                      /* ON  */
+    LOAD = 294,                    /* LOAD  */
+    DATA = 295,                    /* DATA  */
+    INFILE = 296,                  /* INFILE  */
+    EXPLAIN = 297,                 /* EXPLAIN  */
+    EQ = 298,                      /* EQ  */
+    LT = 299,                      /* LT  */
+    GT = 300,                      /* GT  */
+    LE = 301,                      /* LE  */
+    GE = 302,                      /* GE  */
+    NE = 303,                      /* NE  */
+    NUMBER = 304,                  /* NUMBER  */
+    FLOAT = 305,                   /* FLOAT  */
+    ID = 306,                      /* ID  */
+    DATE_STR = 307,                /* DATE_STR  */
+    SSS = 308,                     /* SSS  */
+    UMINUS = 309                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -113,7 +114,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 104 "yacc_sql.y"
+#line 105 "yacc_sql.y"
 
   ParsedSqlNode *                   sql_node;
   ConditionSqlNode *                condition;
@@ -132,7 +133,7 @@ union YYSTYPE
   int                               number;
   float                             floats;
 
-#line 136 "yacc_sql.hpp"
+#line 137 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
