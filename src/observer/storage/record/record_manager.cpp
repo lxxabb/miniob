@@ -261,7 +261,10 @@ RC RecordPageHandler::update_record(const RID *rid,int offset,Value *value)
 {
   ASSERT(readonly_ == false, "cannot delete record from page while the page is readonly");
   char* data=this->get_record_data(rid->slot_num)+offset;
-  memcpy(data,value->data(),value->length());
+  int length=value->length();
+  if(value->attr_type()==AttrType::CHARS)
+    length++;
+  memcpy(data,value->data(),length);
   frame_->mark_dirty();
   return RC::SUCCESS;
 }
