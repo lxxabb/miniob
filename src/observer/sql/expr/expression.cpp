@@ -86,10 +86,35 @@ ComparisonExpr::ComparisonExpr(CompOp comp, unique_ptr<Expression> left, unique_
 ComparisonExpr::~ComparisonExpr()
 {}
 
+// 匹配表达式，暂时放这里，有空挪到value
+bool isMatch(string s, string p) {
+  int j=0;
+  for(int i=0,last_p=0,s_start=0;i<s.size();)
+  {
+      if(j<p.size()&&(s[i]==p[j]||p[j]=='_')){
+          i++;
+          j++;
+      } else if(j<p.size()&&p[j]=='%') {
+          s_start=i;
+          last_p=++j;
+      } else if(last_p!=0) {
+          i=s_start++;
+          j=last_p;
+      }
+      else 
+          return false;
+  }
+  for(;j<p.size()&&p[j]=='%';++j);
+  return j==p.size();
+}
+
+
 RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &result) const
 {
   RC rc = RC::SUCCESS;
-  int cmp_result = left.compare(right);
+  int cmp_result;
+  if(comp_!=LIKE)
+    cmp_result = left.compare(right);
   result = false;
   switch (comp_) {
     case EQUAL_TO: {
@@ -109,6 +134,12 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
     } break;
     case GREAT_THAN: {
       result = (cmp_result > 0);
+    } break;
+    case LIKE:{
+      if(left.attr_type()==CHARS && right.attr_type()==CHARS)
+        result = isMatch(left.get_string(),right.get_string());
+      else
+        return RC::INVALID_ARGUMENT;
     } break;
     default: {
       LOG_WARN("unsupported comparison. %d", comp_);
