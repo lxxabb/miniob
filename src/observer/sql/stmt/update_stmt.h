@@ -27,7 +27,7 @@ class UpdateStmt : public Stmt
 {
 public:
   UpdateStmt() = default;
-  UpdateStmt(Table *table, Value *values, int value_amount,FilterStmt *filter_st,const char* attrname);
+  UpdateStmt(Table *table, Value values, int value_amount,FilterStmt *filter_st,std::string attrname);
 
 public:
   static RC create(Db *db, const UpdateSqlNode &update_sql, Stmt *&stmt);
@@ -37,11 +37,11 @@ public:
   {
     return table_;
   }
-  Value *values() const
+  Value values() const
   {
     return values_;
   }
-  const char* attr_name() const
+  std::string attr_name() const
   {
     return attr_name_;
   }
@@ -60,8 +60,8 @@ public:
 
 private:
   Table *table_ = nullptr;
-  Value *values_ = nullptr;
+  Value values_;
   int value_amount_ = 0;
   FilterStmt *filter_stmt_ = nullptr;
-  const char* attr_name_=nullptr;
+  std::string attr_name_;
 };

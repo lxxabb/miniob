@@ -41,13 +41,14 @@ RC OptimizeStage::handle_request(SQLStageEvent *sql_event)
     }
     return rc;
   }
-
-  rc = rewrite(logical_operator);
-  if (rc != RC::SUCCESS) {
-    LOG_WARN("failed to rewrite plan. rc=%s", strrc(rc));
-    return rc;
-  }
-
+  //if(logical_operator->type()!=LogicalOperatorType::UPDATE) { //不知道为啥，update一rewrite就寄,operator的值会改变。以后解决
+    rc = rewrite(logical_operator);
+    if (rc != RC::SUCCESS) {
+      LOG_WARN("failed to rewrite plan. rc=%s", strrc(rc));
+      return rc;
+    }
+  //}
+ 
   rc = optimize(logical_operator);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to optimize plan. rc=%s", strrc(rc));

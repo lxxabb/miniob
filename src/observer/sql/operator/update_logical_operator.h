@@ -17,13 +17,13 @@ See the Mulan PSL v2 for more details. */
 #include "sql/operator/logical_operator.h"
 
 /**
- * @brief 逻辑算子，用于执行delete语句
+ * @brief 逻辑算子，用于执行update语句
  * @ingroup LogicalOperator
  */
 class UpdateLogicalOperator : public LogicalOperator 
 {
 public:
-  UpdateLogicalOperator(Table *table,Value* value,const char* attr_name);
+  UpdateLogicalOperator(Table *table,Value value,std::string attr_name);
   virtual ~UpdateLogicalOperator() = default;
 
   LogicalOperatorType type() const override
@@ -34,17 +34,17 @@ public:
   {
     return table_;
   }
-  Value *value() const
+  Value value() const
   {
     return value_;
   }
-  const char* attr_name() const
+  std::string attr_name() const
   {
     return attr_name_;
   }
 
 private:
   Table *table_ = nullptr;
-  Value *value_ = nullptr;
-  const char* attr_name_ ;
+  Value value_;
+  std::string attr_name_;
 };

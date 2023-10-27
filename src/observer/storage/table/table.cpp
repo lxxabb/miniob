@@ -490,13 +490,25 @@ RC Table::delete_record(const Record &record)
 RC Table::update_record(Record &record,const char* attr_name,Value* value)
 {
   RC rc=RC::SUCCESS;
-   for (Index *index :indexes_) {
-    // rc = index->update_entry(record.data(), &record.rid());
-    // ASSERT(RC::SUCCESS == rc, 
-    //        "failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
-    //        name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
+  for (Index *index :indexes_) {
+    rc = index->delete_entry(record.data(), &record.rid());
+    ASSERT(RC::SUCCESS == rc, 
+           "failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+           name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
   }
-  //rc = record_handler_->update_record(&record.rid());
+
+  int offset = table_meta_.field(attr_name)->offset();
+  rc = record_handler_->update_record(&record.rid(),offset,value);
+  if(rc!=RC::SUCCESS) {
+    return rc;
+  }
+
+  for (Index *index :indexes_) {
+    rc = index->insert_entry(record.data(), &record.rid());
+    ASSERT(RC::SUCCESS == rc, 
+           "failed to insert entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
+           name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
+  }
   return rc;
 }
 
