@@ -498,7 +498,8 @@ RC Table::update_record(Record &record,const char* attr_name,Value* value)
   }
 
   int offset = table_meta_.field(attr_name)->offset();
-  rc = record_handler_->update_record(&record.rid(),offset,value);
+  int len = table_meta_.field(attr_name)->len();
+  rc = record_handler_->update_record(&record.rid(),offset,len,value);
   if(rc!=RC::SUCCESS) {
     return rc;
   }

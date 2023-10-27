@@ -113,7 +113,7 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
 {
   RC rc = RC::SUCCESS;
   int cmp_result;
-  if(comp_!=LIKE)
+  if(comp_!=LIKE && comp_ != NOT_LIKE)
     cmp_result = left.compare(right);
   result = false;
   switch (comp_) {
@@ -138,6 +138,12 @@ RC ComparisonExpr::compare_value(const Value &left, const Value &right, bool &re
     case LIKE:{
       if(left.attr_type()==CHARS && right.attr_type()==CHARS)
         result = isMatch(left.get_string(),right.get_string());
+      else
+        return RC::INVALID_ARGUMENT;
+    } break;
+    case NOT_LIKE:{
+      if(left.attr_type()==CHARS && right.attr_type()==CHARS)
+        result = !isMatch(left.get_string(),right.get_string());
       else
         return RC::INVALID_ARGUMENT;
     } break;

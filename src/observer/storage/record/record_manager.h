@@ -188,7 +188,7 @@ public:
    * @param attr_name 要更新的字段名
    * @param value 更新值
    */
-  RC update_record(const RID *rid,int offset,Value *value);
+  RC update_record(const RID *rid,int offset,int len,Value *value);
 
   /**
    * @brief 获取指定位置的记录数据
@@ -288,7 +288,7 @@ public:
    * @brief 更新记录到指定文件中
    * 
    */
-  RC update_record(const RID *rid,int offset,Value *value);
+  RC update_record(const RID *rid,int offset,int len,Value *value);
 
    /**
    * @brief 数据库恢复时，在指定文件指定位置插入数据

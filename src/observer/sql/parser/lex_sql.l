@@ -98,6 +98,7 @@ CALC                                    RETURN_TOKEN(CALC);
 FROM                                    RETURN_TOKEN(FROM);
 WHERE                                   RETURN_TOKEN(WHERE);
 LIKE                                    RETURN_TOKEN(LIKE_OP);
+NOT LIKE                                RETURN_TOKEN(NOT_LIKE_OP);
 AND                                     RETURN_TOKEN(AND);
 INSERT                                  RETURN_TOKEN(INSERT);
 INTO                                    RETURN_TOKEN(INTO);

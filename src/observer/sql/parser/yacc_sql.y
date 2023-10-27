@@ -86,6 +86,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
         FROM
         WHERE
         LIKE_OP
+        NOT_LIKE_OP
         AND
         SET
         ON
@@ -649,6 +650,7 @@ comp_op:
     | GE { $$ = GREAT_EQUAL; }
     | NE { $$ = NOT_EQUAL; }
     | LIKE_OP { $$ = LIKE; }
+    | NOT_LIKE_OP { $$ = NOT_LIKE;}
     ;
 
 load_data_stmt:

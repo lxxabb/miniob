@@ -257,13 +257,14 @@ RC RecordPageHandler::delete_record(const RID *rid)
   }
 }
 
-RC RecordPageHandler::update_record(const RID *rid,int offset,Value *value)
+RC RecordPageHandler::update_record(const RID *rid,int offset,int len,Value *value)
 {
   ASSERT(readonly_ == false, "cannot delete record from page while the page is readonly");
   char* data=this->get_record_data(rid->slot_num)+offset;
   int length=value->length();
   if(value->attr_type()==AttrType::CHARS)
     length++;
+  length=length<len?length:len;
   memcpy(data,value->data(),length);
   frame_->mark_dirty();
   return RC::SUCCESS;
@@ -461,7 +462,7 @@ RC RecordFileHandler::delete_record(const RID *rid)
   return rc;
 }
 
-RC RecordFileHandler::update_record(const RID *rid,int offset,Value *value)
+RC RecordFileHandler::update_record(const RID *rid,int offset,int len,Value *value)
 {
   RC rc = RC::SUCCESS;
   RecordPageHandler page_handler;
@@ -469,7 +470,7 @@ RC RecordFileHandler::update_record(const RID *rid,int offset,Value *value)
     LOG_ERROR("Failed to init record page handler.page number=%d. rc=%s", rid->page_num, strrc(rc));
     return rc;
   }
-  rc=page_handler.update_record(rid,offset,value);
+  rc=page_handler.update_record(rid,offset,len,value);
   page_handler.cleanup();
   return rc;
 }
