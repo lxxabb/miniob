@@ -243,16 +243,16 @@ int Value::compare(const Value &other) const
     return common::compare_int((void*)&this_data,(void*)&other.num_value_.int_value_);
   } else if(this->attr_type_==CHARS && other.attr_type_==INTS) {
     int this_data=this->get_int();
-    common::compare_int((void*)&this_data,(void*)&other.num_value_.int_value_);
+    return common::compare_int((void*)&this_data,(void*)&other.num_value_.int_value_);
   } else if(this->attr_type_==CHARS && other.attr_type_==FLOATS) {
     float this_data=this->get_float();
-    common::compare_float((void*)&this_data,(void*)&other.num_value_.float_value_);
+    return common::compare_float((void*)&this_data,(void*)&other.num_value_.float_value_);
   } else if(this->attr_type_==INTS && other.attr_type_==CHARS) {
     int other_data=other.get_int();
-    common::compare_int((void*)&(this->num_value_.int_value_),(void*)&other_data);
+    return common::compare_int((void*)&(this->num_value_.int_value_),(void*)&other_data);
   } else if(this->attr_type_==FLOATS && other.attr_type_==CHARS) {
     float other_data=other.get_float();
-    common::compare_int((void*)&(this->num_value_.float_value_),(void*)&other_data);
+    return common::compare_int((void*)&(this->num_value_.float_value_),(void*)&other_data);
   }
   LOG_WARN("not supported");
   return -1;  // TODO return rc?
@@ -304,7 +304,7 @@ float Value::get_float() const
       {
         if(x>='0'&&x<='9')
         {
-          ret*=10;
+          ret*=10; 
           div*=10;
           ret+=x-'0';
         }
@@ -317,6 +317,7 @@ float Value::get_float() const
         }
         else break;
       }
+      if(!cnt) return ret;
       return sum+(ret/div);
     } break;
     case INTS: {
