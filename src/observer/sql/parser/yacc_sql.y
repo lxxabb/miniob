@@ -100,6 +100,8 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
         LE
         GE
         NE
+        INNER
+        JOIN
 
 /** union 中定义各种数据类型，真实生成的代码也是union类型，所以不能有非POD类型的数据 **/
 %union {
@@ -115,6 +117,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   std::vector<Value> *              value_list;
   std::vector<ConditionSqlNode> *   condition_list;
   std::vector<RelAttrSqlNode> *     rel_attr_list;
+  JoinOnSqlNode*                    join_on_list;
   std::vector<std::string> *        relation_list;
   char *                            string;
   int                               number;
@@ -140,6 +143,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %type <value_list>          value_list
 %type <condition_list>      where
 %type <condition_list>      condition_list
+%type <join_on_list>          join_list
 %type <rel_attr_list>       select_attr
 %type <relation_list>       rel_list
 %type <rel_attr_list>       attr_list
@@ -442,7 +446,32 @@ select_stmt:        /*  select 语句的语法解析树*/
       if ($6 != nullptr) {
         $$->selection.conditions.swap(*$6);
         delete $6;
+      } 
+      free($4);
+    }
+    | SELECT select_attr FROM ID join_list where
+    {
+      $$ = new ParsedSqlNode(SCF_SELECT);
+      if ($2 != nullptr) {
+        $$->selection.attributes.swap(*$2);
+        delete $2;
       }
+      if ($5 != nullptr) {
+        $$->selection.relations.swap(*($5->rel));
+        delete ($5->rel);
+        $$->selection.conditions.swap(*($5->cond));
+        delete ($5->cond);
+      }
+      $$->selection.relations.push_back($4);
+      std::reverse($$->selection.relations.begin(), $$->selection.relations.end());
+
+      if ($6 != nullptr) {
+        if($$->selection.conditions.empty())
+          $$->selection.conditions.swap(*$6);
+        else
+          $$->selection.conditions.insert($$->selection.conditions.begin(),$6->begin(),$6->end());
+        delete $6;
+      } 
       free($4);
     }
     ;
@@ -565,6 +594,27 @@ rel_list:
       $$->push_back($2);
       free($2);
     }
+    ;
+join_list:
+    INNER JOIN ID ON condition_list {
+      $$ = new JoinOnSqlNode;
+      $$->rel=new std::vector<std::string>;
+      $$->cond=$5;
+      $$->rel->emplace_back($3);
+    }
+    | INNER JOIN ID ON condition_list join_list {
+      if ($6 != nullptr) {
+        $$ = $6;
+        $$->rel->emplace_back($3);
+        $$->cond->insert($$->cond->end(),$5->begin(),$5->end());
+        delete $5;
+      } else {
+        $$ = new JoinOnSqlNode;
+        $$->rel=new std::vector<std::string>;
+        $$->cond=$5;
+        $$->rel->emplace_back($3);
+      }
+    } 
     ;
 where:
     /* empty */
