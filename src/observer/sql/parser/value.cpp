@@ -241,6 +241,18 @@ int Value::compare(const Value &other) const
       return -1;
     }
     return common::compare_int((void*)&this_data,(void*)&other.num_value_.int_value_);
+  } else if(this->attr_type_==CHARS && other.attr_type_==INTS) {
+    int this_data=this->get_int();
+    common::compare_int((void*)&this_data,(void*)&other.num_value_.int_value_);
+  } else if(this->attr_type_==CHARS && other.attr_type_==FLOATS) {
+    float this_data=this->get_float();
+    common::compare_float((void*)&this_data,(void*)&other.num_value_.float_value_);
+  } else if(this->attr_type_==INTS && other.attr_type_==CHARS) {
+    int other_data=other.get_int();
+    common::compare_int((void*)&(this->num_value_.int_value_),(void*)&other_data);
+  } else if(this->attr_type_==FLOATS && other.attr_type_==CHARS) {
+    float other_data=other.get_float();
+    common::compare_int((void*)&(this->num_value_.float_value_),(void*)&other_data);
   }
   LOG_WARN("not supported");
   return -1;  // TODO return rc?
@@ -250,12 +262,17 @@ int Value::get_int() const
 {
   switch (attr_type_) {
     case CHARS: {
-      try {
-        return (int)(std::stol(str_value_));
-      } catch (std::exception const &ex) {
-        LOG_TRACE("failed to convert string to number. s=%s, ex=%s", str_value_.c_str(), ex.what());
-        return 0;
+      int ret=0;
+      for(char x:str_value_)
+      {
+        if(x>='0'&&x<='9')
+        {
+          ret*=10;
+          ret+=x-'0';
+        }
+        else break;
       }
+      return ret;
     }
     case INTS:
     case DATES: {
@@ -279,12 +296,28 @@ float Value::get_float() const
 {
   switch (attr_type_) {
     case CHARS: {
-      try {
-        return std::stof(str_value_);
-      } catch (std::exception const &ex) {
-        LOG_TRACE("failed to convert string to float. s=%s, ex=%s", str_value_.c_str(), ex.what());
-        return 0.0;
+      float ret=0;
+      float sum=0;
+      int div=1;
+      int cnt=0;
+      for(char x:str_value_)
+      {
+        if(x>='0'&&x<='9')
+        {
+          ret*=10;
+          div*=10;
+          ret+=x-'0';
+        }
+        else if(x=='.'&&cnt==0)
+        {
+          cnt++;
+          sum=ret;
+          div=1;
+          ret=0;
+        }
+        else break;
       }
+      return sum+(ret/div);
     } break;
     case INTS: {
       return float(num_value_.int_value_);
