@@ -170,6 +170,7 @@ void quit_signal_handle(int signum)
 int main(int argc, char **argv)
 {
   int rc = STATUS_SUCCESS;
+//  sleep(10);
 
   setSignalHandler(quit_signal_handle);
 

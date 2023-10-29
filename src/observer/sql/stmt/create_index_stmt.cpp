@@ -26,9 +26,9 @@ RC CreateIndexStmt::create(Db *db, const CreateIndexSqlNode &create_index, Stmt 
   stmt = nullptr;
 
   const char *table_name = create_index.relation_name.c_str();
-  if (is_blank(table_name) || is_blank(create_index.index_name.c_str()) || is_blank(create_index.attribute_name.c_str())) {
-    LOG_WARN("invalid argument. db=%p, table_name=%p, index name=%s, attribute name=%s",
-        db, table_name, create_index.index_name.c_str(), create_index.attribute_name.c_str());
+  if (is_blank(table_name) || is_blank(create_index.index_name.c_str()) || (create_index.attribute_name.empty())) {
+    LOG_WARN("invalid argument. db=%p, table_name=%p, index name=%s",
+        db, table_name, create_index.index_name.c_str());
     return RC::INVALID_ARGUMENT;
   }
 
@@ -39,10 +39,16 @@ RC CreateIndexStmt::create(Db *db, const CreateIndexSqlNode &create_index, Stmt 
     return RC::SCHEMA_TABLE_NOT_EXIST;
   }
 
-  const FieldMeta *field_meta = table->table_meta().field(create_index.attribute_name.c_str());
-  if (nullptr == field_meta) {
-    LOG_WARN("no such field in table. db=%s, table=%s, field name=%s", 
-             db->name(), table_name, create_index.attribute_name.c_str());
+  std::vector<const FieldMeta *>field_meta;
+  for(auto attr:create_index.attribute_name){
+    const FieldMeta* f=nullptr;
+    f = (table->table_meta().field(attr.c_str()));
+    if(f!=nullptr)
+      field_meta.push_back(f);
+  }
+
+  if (field_meta.empty()) {
+    LOG_WARN("no such field in table. db=%s, table=%s", db->name(), table_name);
     return RC::SCHEMA_FIELD_NOT_EXIST;   
   }
 

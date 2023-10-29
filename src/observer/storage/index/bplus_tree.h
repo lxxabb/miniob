@@ -28,7 +28,7 @@ See the Mulan PSL v2 for more details. */
 #include "sql/parser/parse_defs.h"
 #include "common/lang/comparator.h"
 #include "common/log/log.h"
-
+#define MAX_COLUMN_NUM 16
 /**
  * @brief B+树的实现
  * @defgroup BPlusTree
@@ -52,40 +52,55 @@ enum class BplusTreeOperationType
 class AttrComparator 
 {
 public:
-  void init(AttrType type, int length)
+  void init(std::vector<AttrType>& type, std::vector<int>& length)
   {
     attr_type_ = type;
     attr_length_ = length;
+    sum_len_=0;
+    for(int i:length)
+      sum_len_+=i;
   }
 
-  int attr_length() const
+  const std::vector<int>& attr_length() const
   {
     return attr_length_;
   }
 
+  const int sum_len() const{
+    return sum_len_;
+  }
+
   int operator()(const char *v1, const char *v2) const
   {
-    switch (attr_type_) {
-      case DATES:
-      case INTS: {
-        return common::compare_int((void *)v1, (void *)v2);
-      } break;
-      case FLOATS: {
-        return common::compare_float((void *)v1, (void *)v2);
+    for(int i=0;i<(int)attr_type_.size();i++){
+      int ret=0;
+      switch (attr_type_[i]) {
+        case DATES:
+        case INTS: {
+          ret= common::compare_int((void *)v1, (void *)v2);
+        } break;
+        case FLOATS: {
+          ret= common::compare_float((void *)v1, (void *)v2);
+        } break;
+        case CHARS: {
+          ret= common::compare_string((void *)v1, attr_length_[i], (void *)v2, attr_length_[i]);
+        } break;
+        default: {
+          ASSERT(false, "unknown attr type. %d", attr_type_[i]);
+          return 0;
+        }
       }
-      case CHARS: {
-        return common::compare_string((void *)v1, attr_length_, (void *)v2, attr_length_);
-      }
-      default: {
-        ASSERT(false, "unknown attr type. %d", attr_type_);
-        return 0;
-      }
+      if(ret)return ret;
+      v1+=attr_length_[i];
+      v2+=attr_length_[i];
     }
+    
   }
 
 private:
-  AttrType attr_type_;
-  int attr_length_;
+  std::vector<AttrType> attr_type_;
+  std::vector<int> attr_length_;
+  int sum_len_;
 };
 
 /**
@@ -96,9 +111,16 @@ private:
 class KeyComparator 
 {
 public:
-  void init(AttrType type, int length)
+  void init(std::vector<AttrType>& type, std::vector<int>& length)
   {
     attr_comparator_.init(type, length);
+  }
+
+  void init(AttrType type, int length)
+  {
+    std::vector<AttrType>attr{type};
+    std::vector<int>len{length};
+    attr_comparator_.init(attr,len);
   }
 
   const AttrComparator &attr_comparator() const
@@ -113,8 +135,8 @@ public:
       return result;
     }
 
-    const RID *rid1 = (const RID *)(v1 + attr_comparator_.attr_length());
-    const RID *rid2 = (const RID *)(v2 + attr_comparator_.attr_length());
+    const RID *rid1 = (const RID *)(v1 + attr_comparator_.sum_len());
+    const RID *rid2 = (const RID *)(v2 + attr_comparator_.sum_len());
     return RID::compare(rid1, rid2);
   }
 
@@ -176,31 +198,41 @@ private:
  * @brief 键值打印,调试使用(BplusTree)
  * @ingroup BPlusTree
  */
-class KeyPrinter 
+class KeyPrinter
 {
 public:
-  void init(AttrType type, int length)
+  void init(const std::vector<AttrType> &type, const std::vector<int> &length)
   {
-    attr_printer_.init(type, length);
+    assert(type.size() == length.size());
+    attr_printer_.resize(type.size());
+    for (int i = 0; i < type.size(); ++i) {
+      attr_printer_[i].init(type[i], length[i]);
+
+    }
   }
 
-  const AttrPrinter &attr_printer() const
-  {
+  const std::vector<AttrPrinter> &attr_printer() const {
     return attr_printer_;
   }
 
-  std::string operator()(const char *v) const
-  {
+  std::string operator() (const char *v) const {
     std::stringstream ss;
-    ss << "{key:" << attr_printer_(v) << ",";
+    ss << "{key:{";
+    int offset = 0;
+    for (int i = 0; i < attr_printer_.size(); ++i) {
+      ss << attr_printer_[i](v + offset) << ",";
+      offset += attr_printer_[i].attr_length();
+    }
+    ss << "},";
 
-    const RID *rid = (const RID *)(v + attr_printer_.attr_length());
+    // const RID *rid = (const RID *)(v + attr_printer_.attr_length());
+    const RID *rid = (const RID *)(v + offset);
     ss << "rid:{" << rid->to_string() << "}}";
     return ss.str();
   }
 
 private:
-  AttrPrinter attr_printer_;
+  std::vector<AttrPrinter> attr_printer_;
 };
 
 /**
@@ -216,20 +248,21 @@ struct IndexFileHeader
     memset(this, 0, sizeof(IndexFileHeader));
     root_page = BP_INVALID_PAGE_NUM;
   }
-  PageNum root_page;          ///< 根节点在磁盘中的页号
-  int32_t internal_max_size;  ///< 内部节点最大的键值对数
-  int32_t leaf_max_size;      ///< 叶子节点最大的键值对数
-  int32_t attr_length;        ///< 键值的长度
-  int32_t key_length;         ///< attr length + sizeof(RID)
-  AttrType attr_type;         ///< 键值的类型
+  PageNum root_page=0;          ///< 根节点在磁盘中的页号
+  int32_t internal_max_size=0;  ///< 内部节点最大的键值对数
+  int32_t leaf_max_size=0;      ///< 叶子节点最大的键值对数
+  int32_t  column_num; 
+  int32_t  attr_length[MAX_COLUMN_NUM];
+  int32_t  key_length; // attr length + sizeof(RID)
+  AttrType attr_type[MAX_COLUMN_NUM]; // AttrType attr_type;       ///< 键值的类型
 
   const std::string to_string()
   {
     std::stringstream ss;
 
-    ss << "attr_length:" << attr_length << ","
+    ss << "attr_length:" << attr_length[0] << ","
        << "key_length:" << key_length << ","
-       << "attr_type:" << attr_type << ","
+       << "attr_type:" << attr_type[0] << ","
        << "root_page:" << root_page << ","
        << "internal_max_size:" << internal_max_size << ","
        << "leaf_max_size:" << leaf_max_size << ";";
@@ -465,10 +498,11 @@ public:
    * attrType描述被索引属性的类型，attrLength描述被索引属性的长度
    */
   RC create(const char *file_name, 
-            AttrType attr_type, 
-            int attr_length, 
+            std::vector<AttrType>& attr_type, 
+            std::vector<int>& attr_length, 
             int internal_max_size = -1, 
             int leaf_max_size = -1);
+  RC create(const char *file_name,AttrType attr_type,int attr_length, int internal_max_size /* = -1*/,int leaf_max_size /* = -1 */);
 
   /**
    * 打开名为fileName的索引文件。
@@ -488,6 +522,7 @@ public:
    * 即向索引中插入一个值为（user_key，rid）的键值对
    * @note 这里假设user_key的内存大小与attr_length 一致
    */
+  RC insert_entry(std::vector<const char *> &user_key, const RID *rid);
   RC insert_entry(const char *user_key, const RID *rid);
 
   /**
@@ -495,6 +530,7 @@ public:
    * @return RECORD_INVALID_KEY 指定值不存在
    * @note 这里假设user_key的内存大小与attr_length 一致
    */
+  RC delete_entry(std::vector<const char *> &user_key, const RID *rid);
   RC delete_entry(const char *user_key, const RID *rid);
 
   bool is_empty() const;
@@ -566,6 +602,7 @@ protected:
 
 private:
   common::MemPoolItem::unique_ptr make_key(const char *user_key, const RID &rid);
+  common::MemPoolItem::unique_ptr make_key(const std::vector<const char *> &user_key, const RID &rid);
   void free_key(char *key);
 
 protected:
