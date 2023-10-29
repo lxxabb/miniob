@@ -45,6 +45,8 @@ RC CreateIndexStmt::create(Db *db, const CreateIndexSqlNode &create_index, Stmt 
     f = (table->table_meta().field(attr.c_str()));
     if(f!=nullptr)
       field_meta.push_back(f);
+    else
+      return RC::INVALID_ARGUMENT;
   }
 
   if (field_meta.empty()) {
