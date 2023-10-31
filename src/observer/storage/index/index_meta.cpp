@@ -83,31 +83,7 @@ RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, I
     }
     fields.push_back(field);
   }
-  // std::vector<const FieldMeta *> fields;
-  // const char* str=field_value.asCString();
-  // int pos=0;std::string tmp;
-  // while(str[pos])
-  // {
-  //   if(str[pos]!='+')
-  //     tmp.push_back(str[pos]);
-  //   else {
-  //     const FieldMeta *field = table.field(tmp.c_str());
-  //     if (nullptr == field) {
-  //       LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), field_value.asCString());
-  //       return RC::SCHEMA_FIELD_MISSING;
-  //     }
-  //     fields.push_back(field);
-  //     tmp.clear();
-  //   }
-  //   pos++;
-  // }
-  // const FieldMeta *field = table.field(tmp.c_str());
-  // if (nullptr == field) {
-  //   LOG_ERROR("Deserialize index [%s]: no such field: %s", name_value.asCString(), field_value.asCString());
-  //   return RC::SCHEMA_FIELD_MISSING;
-  // }
-  // fields.push_back(field);
-  return index.init(name_value.asCString(),fields);
+  return index.init(name_value.asCString(),fields,(IndexType)(index_tp.asInt()));
 }
 
 const char *IndexMeta::name() const

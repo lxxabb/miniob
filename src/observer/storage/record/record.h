@@ -140,6 +140,10 @@ public:
     this->len_   = len;
     this->owner_ = true;
   }
+  void set_len(int l) 
+  {
+    this->len_=l;
+  }
 
   char       *data() { return this->data_; }
   const char *data() const { return this->data_; }

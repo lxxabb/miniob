@@ -488,9 +488,10 @@ RC Table::create_index(Trx *trx, std::vector<const FieldMeta *>field_meta, const
   return rc;
 }
 
-RC Table::delete_record(const Record &record)
+RC Table::delete_record(const Record &record,bool handle_index)
 {
   RC rc = RC::SUCCESS;
+  if(handle_index)
   for (Index *index : indexes_) {
     rc = index->delete_entry(record.data(), &record.rid());
     ASSERT(RC::SUCCESS == rc, 
@@ -500,7 +501,6 @@ RC Table::delete_record(const Record &record)
   rc = record_handler_->delete_record(&record.rid());
   return rc;
 }
-
 RC Table::update_record(Record &record,const char* attr_name,Value* value)
 {
   RC rc=RC::SUCCESS;
@@ -510,6 +510,8 @@ RC Table::update_record(Record &record,const char* attr_name,Value* value)
            "failed to delete entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
            name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
   }
+  char buf[8192];
+  memcpy(buf,record.data(),record.len());
 
   int offset = table_meta_.field(attr_name)->offset();
   int len = table_meta_.field(attr_name)->len();
@@ -517,13 +519,20 @@ RC Table::update_record(Record &record,const char* attr_name,Value* value)
   if(rc!=RC::SUCCESS) {
     return rc;
   }
-
+  RC rc_check=check_unique_indexes(record.data());
+  if(rc_check!=RC::SUCCESS) {
+    delete_record(record,false);
+    memcpy(record.data(),buf,record.len());
+    insert_record(record);
+    return rc_check;
+  }
   for (Index *index :indexes_) {
     rc = index->insert_entry(record.data(), &record.rid());
-    ASSERT(RC::SUCCESS == rc, 
+    ASSERT(RC::SUCCESS == rc,
            "failed to insert entry from index. table name=%s, index name=%s, rid=%s, rc=%s",
            name(), index->index_meta().name(), record.rid().to_string().c_str(), strrc(rc));
   }
+  if(rc_check!=RC::SUCCESS) return rc_check;
   return rc;
 }
 

@@ -234,6 +234,11 @@ protected:
     return frame_->data() + page_header_->first_record_offset + (page_header_->record_size * slot_num);
   }
 
+  int get_record_size() 
+  {
+    return page_header_->record_real_size;
+  }
+
 protected:
   DiskBufferPool *disk_buffer_pool_ = nullptr;  ///< 当前操作的buffer pool(文件)
   Frame          *frame_            = nullptr;  ///< 当前操作页面关联的frame(frame的更多概念可以参考buffer pool和frame)
