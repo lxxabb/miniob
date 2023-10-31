@@ -232,6 +232,16 @@ RC Table::insert_record(Record &record)
     LOG_ERROR("Insert record failed. table name=%s, rc=%s", table_meta_.name(), strrc(rc));
     return rc;
   }
+  rc = check_unique_indexes(record.data());
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("check unique record failed. table name=%s, rc=%s", table_meta_.name(), strrc(rc));
+    RC rc2 = record_handler_->delete_record(&record.rid());
+    if (rc2 != RC::SUCCESS) {
+      LOG_PANIC("Failed to rollback record data when insert index entries failed. table name=%s, rc=%d:%s",
+                name(), rc2, strrc(rc2));
+    }
+    return rc;
+  }
 
   rc = insert_entry_of_indexes(record.data(), record.rid());
   if (rc != RC::SUCCESS) { // 可能出现了键值重复
@@ -383,7 +393,7 @@ RC Table::get_record_scanner(RecordFileScanner &scanner, Trx *trx, bool readonly
   return rc;
 }
 
-RC Table::create_index(Trx *trx, std::vector<const FieldMeta *>field_meta, const char *index_name)
+RC Table::create_index(Trx *trx, std::vector<const FieldMeta *>field_meta, const char *index_name,IndexType tp)
 {
   if (common::is_blank(index_name) || field_meta.empty()) {
     LOG_INFO("Invalid input arguments, table name is %s, index_name is blank or attribute_name is blank", name());
@@ -391,7 +401,7 @@ RC Table::create_index(Trx *trx, std::vector<const FieldMeta *>field_meta, const
   }
 
   IndexMeta new_index_meta;  //to update
-  RC rc = new_index_meta.init(index_name,field_meta);
+  RC rc = new_index_meta.init(index_name,field_meta,tp);
   if (rc != RC::SUCCESS) {
     LOG_INFO("Failed to init IndexMeta in table:%s, index_name:%s", 
              name(), index_name);
@@ -419,6 +429,7 @@ RC Table::create_index(Trx *trx, std::vector<const FieldMeta *>field_meta, const
 
   Record record;
   while (scanner.has_next()) {
+    assert(tp!=Unique);
     rc = scanner.next(record);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to scan records while creating index. table=%s, index=%s, rc=%s",
@@ -523,6 +534,22 @@ RC Table::insert_entry_of_indexes(const char *record, const RID &rid)
     rc = index->insert_entry(record, &rid);
     if (rc != RC::SUCCESS) {
       break;
+    }
+  }
+  return rc;
+}
+RC Table::check_unique_indexes(const char *record)
+{
+  RC rc = RC::SUCCESS;
+  bool has_entry=false;
+  for (Index *index : indexes_) {
+    if(index->index_meta().tp()==Unique) {
+      rc = index->check_entry(record,has_entry);
+      if (rc != RC::SUCCESS) {
+        break;
+      } else if(has_entry) {
+        return RC::INVALID_ARGUMENT;
+      }
     }
   }
   return rc;

@@ -101,6 +101,16 @@ RC BplusTreeIndex::insert_entry(const char *record, const RID *rid)
 //  return index_handler_.insert_entry(record, rid);
 }
 
+RC BplusTreeIndex::check_entry(const char *record,bool& has_entry)
+{
+  std::vector<const char *> key; 
+  int key_len=0;
+  for (int i = 0; i < field_meta_.size(); ++i) {
+    key.push_back(record + field_meta_[i].offset());
+  }  
+  return index_handler_.check_entry(key,has_entry);
+}
+
 RC BplusTreeIndex::delete_entry(const char *record, const RID *rid)
 {
   std::vector<const char *> key; 

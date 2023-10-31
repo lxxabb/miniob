@@ -533,6 +533,10 @@ public:
   RC delete_entry(std::vector<const char *> &user_key, const RID *rid);
   RC delete_entry(const char *user_key, const RID *rid);
 
+
+  RC check_entry(std::vector<const char *> &user_key,bool& has_entry);
+
+
   bool is_empty() const;
 
   /**

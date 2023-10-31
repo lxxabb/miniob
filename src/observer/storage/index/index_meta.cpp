@@ -21,14 +21,15 @@ See the Mulan PSL v2 for more details. */
 
 const static Json::StaticString FIELD_NAME("name");
 const static Json::StaticString FIELD_FIELD_NAME("field_name");
+const static Json::StaticString FIELD_TYPE("index_type");
 
-RC IndexMeta::init(const char *name, std::vector<const FieldMeta *>&field) // todo indexmeta.h
+RC IndexMeta::init(const char *name, std::vector<const FieldMeta *>&field,IndexType tp) // todo indexmeta.h
 {
   if (common::is_blank(name)) {
     LOG_ERROR("Failed to init index, name is empty.");
     return RC::INVALID_ARGUMENT;
   }
-
+  tp_=tp;
   name_ = name;
   for(auto x:field)
     field_.push_back(x->name());
@@ -38,17 +39,24 @@ RC IndexMeta::init(const char *name, std::vector<const FieldMeta *>&field) // to
 void IndexMeta::to_json(Json::Value &json_value) const
 {
   json_value[FIELD_NAME] = name_;
-  json_value.clear();
+  json_value[FIELD_FIELD_NAME].clear();
   for(auto x:field_)
     json_value[FIELD_FIELD_NAME].append(x);
+  json_value[FIELD_TYPE]=tp_;
 }
 
 RC IndexMeta::from_json(const TableMeta &table, const Json::Value &json_value, IndexMeta &index)
 {
   const Json::Value &name_value = json_value[FIELD_NAME];
   const Json::Value &field_value = json_value[FIELD_FIELD_NAME];
+  const Json::Value &index_tp = json_value[FIELD_TYPE];
   if (!name_value.isString()) {
     LOG_ERROR("Index name is not a string. json value=%s", name_value.toStyledString().c_str());
+    return RC::INTERNAL;
+  }
+
+  if (!index_tp.isInt()) {
+    LOG_ERROR("Index type is not a int. json value=%s", name_value.toStyledString().c_str());
     return RC::INTERNAL;
   }
 

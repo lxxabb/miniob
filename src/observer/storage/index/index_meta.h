@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include <string>
 #include <vector>
 #include "common/rc.h"
+#include "sql/parser/parse_defs.h"
 
 class TableMeta;
 class FieldMeta;
@@ -36,13 +37,14 @@ class IndexMeta
 public:
   IndexMeta() = default;
 
-  RC init(const char *name, std::vector<const FieldMeta*>&field);
+  RC init(const char *name, std::vector<const FieldMeta*>&field,IndexType tp=Default);
 
 public:
   const char *name() const;
   std::vector<std::string> field() const;
 
   void desc(std::ostream &os) const;
+  const IndexType tp() const {return tp_;}
 
 public:
   void to_json(Json::Value &json_value) const;
@@ -51,4 +53,5 @@ public:
 protected:
   std::string name_;   // index's name
   std::vector<std::string> field_;  // field's name
+  IndexType tp_;
 };

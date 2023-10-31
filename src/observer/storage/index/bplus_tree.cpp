@@ -1389,7 +1389,8 @@ MemPoolItem::unique_ptr BplusTreeHandler::make_key(const std::vector<const char 
     memcpy(static_cast<char *>(key.get())+ offset, user_key[i], file_header_.attr_length[i]);
     offset += file_header_.attr_length[i];
   }
-  memcpy(static_cast<char *>(key.get()) + offset, &rid, sizeof(rid));
+  if((rid.page_num!=-1) || (rid.slot_num!=-1))
+    memcpy(static_cast<char *>(key.get()) + offset, &rid, sizeof(rid));
   return key;
 }
 
@@ -1405,6 +1406,32 @@ RC BplusTreeHandler::delete_entry(const char *user_key, const RID *rid)
 {
   std::vector<const char *> uk{user_key};
   return delete_entry(uk,rid);
+}
+
+RC BplusTreeHandler::check_entry(std::vector<const char *> &user_key,bool &has_entry) 
+{
+  has_entry=false;
+  if (user_key.empty() || user_key[0]==nullptr) {
+    LOG_WARN("Invalid arguments, key is empty or rid is empty");
+    return RC::INVALID_ARGUMENT;
+  }
+  RID rid={-1,-1};
+  MemPoolItem::unique_ptr pkey = make_key(user_key,rid);
+  if (pkey == nullptr) {
+    LOG_WARN("Failed to alloc memory for key.");
+    return RC::NOMEM;
+  }
+  int sum_len=0;
+  for(int i=0;i<file_header_.column_num;i++)
+  {
+    sum_len+=file_header_.attr_length[i];
+  }
+  char *key = static_cast<char *>(pkey.get());
+  std::list<RID>ret;
+  get_entry(key, sum_len,ret);
+  if(!ret.empty())
+    has_entry=true;
+  return RC::SUCCESS;
 }
 
 RC BplusTreeHandler::insert_entry(std::vector<const char *> &user_key, const RID *rid)
@@ -1941,7 +1968,7 @@ RC BplusTreeScanner::fix_user_key(
   for(auto ty:tree_handler_.file_header_.attr_type)
     if(ty==CHARS) has_chars=true;
   assert(has_chars);
-  assert(strlen(user_key) >= static_cast<size_t>(key_len));
+ // assert(strlen(user_key) >= static_cast<size_t>(key_len));
 
   *should_inclusive = false;
   int sum_len=0;

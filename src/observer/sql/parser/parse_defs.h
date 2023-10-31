@@ -21,6 +21,11 @@ See the Mulan PSL v2 for more details. */
 
 #include "sql/parser/value.h"
 
+enum IndexType {
+  Default,
+  Unique,
+};
+
 class Expression;
 
 /**
@@ -192,6 +197,7 @@ struct CreateIndexSqlNode
   std::string index_name;      ///< Index name
   std::string relation_name;   ///< Relation name
   std::vector<std::string> attribute_name;  ///< Attribute name
+  IndexType tp=Default;
 };
 
 /**
