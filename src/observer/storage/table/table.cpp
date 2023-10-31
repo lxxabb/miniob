@@ -429,7 +429,6 @@ RC Table::create_index(Trx *trx, std::vector<const FieldMeta *>field_meta, const
 
   Record record;
   while (scanner.has_next()) {
-    assert(tp!=Unique);
     rc = scanner.next(record);
     if (rc != RC::SUCCESS) {
       LOG_WARN("failed to scan records while creating index. table=%s, index=%s, rc=%s",
