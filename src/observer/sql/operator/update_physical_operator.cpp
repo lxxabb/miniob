@@ -45,6 +45,11 @@ RC UpdatePhysicalOperator::next()
   }
 
   PhysicalOperator *child = children_[0].get();
+  // int num = table_->table_meta()->index_num();
+  // for(int i=0;i<num;i++)
+  // {
+
+  // }
   while (RC::SUCCESS == (rc = child->next())) {
     Tuple *tuple = child->current_tuple();
     if (nullptr == tuple) {
@@ -54,11 +59,14 @@ RC UpdatePhysicalOperator::next()
 
     RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
     Record &record = row_tuple->record();
-    rc = trx_->update_record(table_,record,attr_name_.c_str(),&value_);  //----------------------TODO
-    if (rc != RC::SUCCESS) {
-      LOG_WARN("failed to delete record: %s", strrc(rc));
-      return rc;
+    for(int i=0;i<attr_name_.size();i++) {
+      rc = trx_->update_record(table_,record,attr_name_[i].c_str(),&(value_[i]));  //----------------------TODO
+      if (rc != RC::SUCCESS) {
+        LOG_WARN("failed to delete record: %s", strrc(rc));
+        return rc;
+      }
     }
+    
   }
 
   return RC::RECORD_EOF;

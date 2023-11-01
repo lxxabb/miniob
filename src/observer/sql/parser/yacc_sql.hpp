@@ -136,8 +136,9 @@ union YYSTYPE
   char *                            string;
   int                               number;
   float                             floats;
+  SetValueSqlNode*                  set_value_list;
 
-#line 141 "yacc_sql.hpp"
+#line 142 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

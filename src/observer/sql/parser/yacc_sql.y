@@ -123,6 +123,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   char *                            string;
   int                               number;
   float                             floats;
+  SetValueSqlNode*                  set_value_list;
 }
 
 %token <number> NUMBER
@@ -144,10 +145,11 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %type <value_list>          value_list
 %type <condition_list>      where
 %type <condition_list>      condition_list
-%type <join_on_list>          join_list
+%type <join_on_list>        join_list
 %type <rel_attr_list>       select_attr
 %type <relation_list>       rel_list
 %type <rel_attr_list>       attr_list
+%type <set_value_list>      set_list
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <sql_node>            calc_stmt
@@ -433,15 +435,21 @@ delete_stmt:    /*  delete 语句的语法解析树*/
     }
     ;
 update_stmt:      /*  update 语句的语法解析树*/
-    UPDATE ID SET ID EQ value where 
+    UPDATE ID SET ID EQ value set_list where 
     {
       $$ = new ParsedSqlNode(SCF_UPDATE);
-      $$->update.relation_name = $2;
-      $$->update.attribute_name = $4;
-      $$->update.value = *$6;
-      if ($7 != nullptr) {
-        $$->update.conditions.swap(*$7);
+      if($7!=nullptr)
+      {
+        $$->update.attribute_names.swap($7->attribute_names);
+        $$->update.values.swap($7->values);
         delete $7;
+      }
+      $$->update.relation_name = $2;
+      $$->update.attribute_names.push_back($4);
+      $$->update.values.push_back(*$6);
+      if ($8 != nullptr) {
+        $$->update.conditions.swap(*$8);
+        delete $8;
       }
       free($2);
       free($4);
@@ -614,6 +622,21 @@ rel_list:
       free($2);
     }
     ;
+set_list:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | COMMA ID EQ value set_list{
+      if ($5 != nullptr) {
+        $$ = $5;
+      } else {
+        $$ = new SetValueSqlNode;
+      }
+      $$->attribute_names.push_back($2);
+      $$->values.push_back(*$4);
+      free($2);
+    }
 join_list:
     INNER JOIN ID ON condition_list {
       $$ = new JoinOnSqlNode;

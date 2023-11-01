@@ -246,8 +246,8 @@ RC PhysicalPlanGenerator::create_plan(DeleteLogicalOperator &delete_oper, unique
 RC PhysicalPlanGenerator::create_plan(UpdateLogicalOperator &update_oper, unique_ptr<PhysicalOperator> &oper)
 {
   vector<unique_ptr<LogicalOperator>> &child_opers = update_oper.children();
-  Value value=update_oper.value();
-  std::string attr_name=update_oper.attr_name();
+  std::vector<Value> value=update_oper.value();
+  std::vector<std::string> attr_name=update_oper.attr_name();
   unique_ptr<PhysicalOperator> child_physical_oper;
 
   RC rc = RC::SUCCESS;
