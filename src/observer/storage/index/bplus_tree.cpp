@@ -1376,6 +1376,19 @@ MemPoolItem::unique_ptr BplusTreeHandler::make_key(const char *user_key, const R
  return make_key(std::vector<const char*>{user_key}, rid);
 }
 
+MemPoolItem::unique_ptr BplusTreeHandler::make_key(const char *user_key, const RID &rid,bool handle_key)
+{
+  MemPoolItem::unique_ptr key = mem_pool_item_->alloc_unique_ptr();
+  int offset=0;
+  for(int i=0;i<file_header_.column_num;i++)
+  {
+    offset+=file_header_.attr_length[i];
+  }
+  memcpy(static_cast<char *>(key.get()), user_key,offset);
+  memcpy(static_cast<char *>(key.get()) + offset, &rid, sizeof(rid));
+  return key;
+}
+
 MemPoolItem::unique_ptr BplusTreeHandler::make_key(const std::vector<const char *> &user_key, const RID &rid)
 {
   MemPoolItem::unique_ptr key = mem_pool_item_->alloc_unique_ptr();
@@ -1793,9 +1806,9 @@ RC BplusTreeScanner::open(const char *left_user_key, int left_len, bool left_inc
 
     MemPoolItem::unique_ptr left_pkey;
     if (left_inclusive) {
-      left_pkey = tree_handler_.make_key(fixed_left_key, *RID::min());
+      left_pkey = tree_handler_.make_key(fixed_left_key, *RID::min(),true);
     } else {
-      left_pkey = tree_handler_.make_key(fixed_left_key, *RID::max());
+      left_pkey = tree_handler_.make_key(fixed_left_key, *RID::max(),true);
     }
 
     const char *left_key = (const char *)left_pkey.get();
@@ -1861,9 +1874,9 @@ RC BplusTreeScanner::open(const char *left_user_key, int left_len, bool left_inc
       }
     }
     if (right_inclusive) {
-      right_key_ = tree_handler_.make_key(fixed_right_key, *RID::max());
+      right_key_ = tree_handler_.make_key(fixed_right_key, *RID::max(),true);
     } else {
-      right_key_ = tree_handler_.make_key(fixed_right_key, *RID::min());
+      right_key_ = tree_handler_.make_key(fixed_right_key, *RID::min(),true);
     }
 
     if (fixed_right_key != right_user_key) {

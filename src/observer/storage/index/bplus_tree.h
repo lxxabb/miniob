@@ -607,6 +607,7 @@ protected:
 private:
   common::MemPoolItem::unique_ptr make_key(const char *user_key, const RID &rid);
   common::MemPoolItem::unique_ptr make_key(const std::vector<const char *> &user_key, const RID &rid);
+  common::MemPoolItem::unique_ptr make_key(const char *user_key, const RID &rid,bool handle_key);
   void free_key(char *key);
 
 protected:
